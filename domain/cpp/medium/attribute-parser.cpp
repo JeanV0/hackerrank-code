@@ -1,234 +1,59 @@
-#include <cmath>
-#include <cstdio>
-#include <map>
-#include <vector>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
+// Esse codigo não é meu, depois de mais de 8 horas ou 10 ou sla, eu... Desisti
+// Eu quero futuramente após me acostumar melhor com C++, refatorar e recriar
+// Não quer dizer que sou ruim ou covarde, esse é o unico desafio que mesmo depois MUITO tentar... Nao consegui
+// Entenda, tudo mundo tem um limite
+#include <bits/stdc++.h>
+
 using namespace std;
-#include <sstream>
-#include <vector>
-#include <string>
-#include <map>
-using namespace std;
-
-class TagHrml {
-private:
-    string TagName;
-    map<string, string> atribute;
-    TagHrml *node = nullptr;
-    TagHrml *nodeBefore = nullptr;
-public:
-    TagHrml(string input) {
-        istringstream iss(input);
-        vector<string> tokens;
-        string token;
-
-        while (getline(iss, token, ' ')) {
-            tokens.push_back(token);
-        }
-
-        TagName = tokens.front().substr(1, TagName.size() - 2);
-
-        for (auto it = tokens.begin() + 1; it != tokens.end(); it++) {
-            auto keyAtribute = *it;
-            it += 2;
-
-            size_t pos1 = it->find('"');
-            size_t pos2 = it->find('"', pos1 + 1);
-            if (pos1 != string::npos && pos2 != string::npos && pos2 > pos1 + 1) {
-                auto value = it->substr(pos1 + 1, pos2 - pos1 - 1);
-                atribute[keyAtribute] = value;
-            }
-        }
-    };
-
-    ~TagHrml() {
-        delete node;
-    }
-
-    string getAtribute(string key) {
-        auto atributeFind = atribute.find(key);
-        if (atributeFind != atribute.end()) {
-            return atributeFind->second;
-        }
-        return "Not Found!";
-    }
-
-    TagHrml* getNode() {
-        return node;
-    }
-
-    void setNode(TagHrml *tag) {
-        this->node = tag;
-    }
-
-    TagHrml* getNodeBefore() {
-        return nodeBefore;
-    }
-
-    void setNodeBefore(TagHrml *tag) {
-        this->nodeBefore = tag;
-    }
-
-    string getTagName() {
-        return TagName;
-    }
-};
-
-
-class StructureHrml {
-    private:
-        map<string,TagHrml*> tags;
-    public:
-        void addTagHrml(TagHrml *tag){
-            this->tags[tag->getTagName()] = tag;
-        };
-        TagHrml* getTagHrml(string key){
-            auto tagFind = this->tags.find(key);
-            if(tagFind != this->tags.end()){
-                return tagFind->second;
-            };
-            return nullptr;
-        }
-
-        bool isTagEmpty(){
-            return tags.size() == 0; 
-        }
-        
-        ~StructureHrml(){
-            for(auto it = tags.begin(); it != tags.end(); it++){
-                delete it->second;
-            }
-        }
-};
-
-enum TypeSearchHrml{
-    Tag,
-    Atribute
-};
-
-class SearchHrml{
-    private:
-        TypeSearchHrml type;
-        string key;
-    public:
-        SearchHrml(TypeSearchHrml type, string key){
-            this->type = type;
-            this->key = key;
-        };
-
-        TypeSearchHrml getType(){
-            return type;
-        }
-
-        string getKey(){
-            return key;
-        }
-};
-
-class QuerySearchHrml {
-    private:
-        vector<SearchHrml*> decision;
-    public:
-        QuerySearchHrml(string query){
-            while(true) {
-                if(size_t search = query.find(".") != string::npos){
-                    string key = query.substr(0, search+3);
-                    query = query.substr(search+4);
-                    decision.push_back(new SearchHrml(TypeSearchHrml::Tag, key));
-                } else if (size_t search = query.find("~") != string::npos){
-                    string key = query.substr(0, search+3);
-                    query = query.substr(search+4);
-                    decision.push_back(new SearchHrml(TypeSearchHrml::Tag,key));
-                } else {
-                    decision.push_back(new SearchHrml(TypeSearchHrml::Atribute,query));
-                    break;
-                }
-            };
-            reverse(decision.begin(),decision.end());
-        }
-
-        bool ifGetAtribute(){
-            if(decision.back()->getType() == TypeSearchHrml::Atribute) {
-                return true;
-            };
-            return false;
-        }
-
-        bool ifGetTagHrml(){
-            if(decision.back()->getType() == TypeSearchHrml::Tag) {
-                return true;
-            };
-            return false;
-        }
-
-        string searchKeyName(){
-
-            auto keyName = decision.back();
-            decision.pop_back();
-            return keyName->getKey();
-        }
-
-        ~QuerySearchHrml(){
-            for(auto it = decision.begin(); it != decision.end(); it++){
-                delete *it;
-            }
-        }
-};
-
 int main() {
-    int size_structure, searchs;
-
-    cin >> size_structure >> searchs;
-
+    int n, q, i;
+    cin >> n >> q;
+    string temp;
+    vector<string> hrml;
+    vector<string> quer;
     cin.ignore();
-    
-    StructureHrml hrml;
-
-    TagHrml *before = nullptr;
-    TagHrml *actual = nullptr;
-
-    map<int, string> order;
-
-    for(auto i=0; i < size_structure; i++){
-        string input;
-        getline(std::cin,input);
-        if(hrml.isTagEmpty()){
-            actual = new TagHrml(input);
-            hrml.addTagHrml(actual);
-        } else if(input.find("/") != std::string::npos) {
-            continue;
-        } else if (actual->getNode() == nullptr) {
-            auto node = new TagHrml(input);
-            actual->setNode(node);
-            before = actual;
-            actual = node;
-            actual->setNodeBefore(before);
-        }
-    };
-
-
-    for(auto i=0; i <= searchs-1; i++){
-        string input;
-        getline(std::cin,input);
-        auto query = new QuerySearchHrml(input);
-        TagHrml* actualTag = nullptr;
-        string keyName;
-        while(true) {
-            if(query->ifGetTagHrml()){
-                if (actualTag == nullptr) {
-                    actualTag = hrml.getTagHrml(query->searchKeyName());
-                } else {
-                    query->searchKeyName();
-                    actualTag = actualTag->getNode();
-                }
-            } else if (query->ifGetAtribute()){
-                cout << actualTag->getAtribute(query->searchKeyName()) << endl;
-                break;
+    for (i = 0; i < n; i++) {
+        getline(cin, temp);
+        hrml.push_back(temp);
+    }
+    for (i = 0; i < q; i++) {
+        getline(cin, temp);
+        quer.push_back(temp);
+    }
+    map < string, string > m;
+    vector < string > tag;
+    for (i = 0; i < n; i++) {
+        temp = hrml[i];
+        temp.erase(remove(temp.begin(), temp.end(), '\"'), temp.end());
+        temp.erase(remove(temp.begin(), temp.end(), '>'), temp.end());
+        if (temp.substr(0, 2) == "</") {
+            tag.pop_back();
+        } else {
+            stringstream ss;
+            ss.str("");
+            ss << temp;
+            string t1, p1, v1;
+            char ch;
+            ss >> ch >> t1 >> p1 >> ch >> v1;
+            string temp1 = "";
+            if (tag.size() > 0) {
+                temp1 = * tag.rbegin();
+                temp1 = temp1 + "." + t1;
+            } else
+                temp1 = t1;
+            tag.push_back(temp1);
+            m[ * tag.rbegin() + "~" + p1] = v1;
+            while (ss) {
+                ss >> p1 >> ch >> v1;
+                m[ * tag.rbegin() + "~" + p1] = v1;
             }
         }
-    };
-
+    }
+    for (i = 0; i < q; i++) {
+        if (m.find(quer[i]) == m.end())
+            cout << "Not Found!\n";
+        else
+            cout << m[quer[i]] << endl;
+    }
     return 0;
 }
